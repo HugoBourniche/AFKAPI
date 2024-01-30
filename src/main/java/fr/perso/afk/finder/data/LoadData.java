@@ -139,7 +139,7 @@ public class LoadData {
 
     private Map<String, Integer> mapRanks() {
         Map<String, Integer> ranks = new HashMap<>();
-        Sheet sheet = this.excelWB.getSheet("Rangs");
+        Sheet sheet = this.excelWB.getSheet("Rangs-202305");
         for (int r = 1; r < sheet.getLastRowNum(); r++) {
             Row row = sheet.getRow(r);
             String characterName = row.getCell(0).getStringCellValue();
