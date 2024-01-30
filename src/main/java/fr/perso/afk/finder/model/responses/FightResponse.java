@@ -12,9 +12,11 @@ public class FightResponse {
 
     public TeamResponse winner;
     public TeamResponse loser;
+    public String type;
 
     public FightResponse(FightEntity fight) {
         this.winner = new TeamResponse(fight.getWinner());
         this.loser = new TeamResponse(fight.getLoser());
+        this.type = fight.getType();
     }
 }
