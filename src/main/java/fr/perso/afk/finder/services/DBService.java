@@ -6,6 +6,8 @@ import fr.perso.afk.finder.model.FightId;
 import fr.perso.afk.finder.model.TeamEntity;
 import fr.perso.afk.finder.model.VersionEntity;
 import fr.perso.afk.finder.model.characteristics.FactionEntity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
@@ -35,12 +37,39 @@ import java.util.*;
 @Transactional
 public class DBService {
 
+    //******************************************************************************************************************
+    // CONSTANTS
+    //******************************************************************************************************************
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(DBService.class);
+
+    //******************************************************************************************************************
+    // REPOSITORIES
+    //******************************************************************************************************************
+
     @PersistenceContext private EntityManager manager;
     @Autowired private VersionRepository versionRepository;
     @Autowired private FactionRepository factionRepository;
     @Autowired private CharacterRepository characterRepository;
     @Autowired private TeamRepository teamsRepository;
     @Autowired private FightRepository fightRepository;
+
+    //******************************************************************************************************************
+    // EMPTY BASE
+    //******************************************************************************************************************
+
+    /**
+     * Empty everything except the version
+     */
+    public void emptyData() {
+        long start = System.currentTimeMillis();
+        this.fightRepository.deleteAll();
+        this.teamsRepository.deleteAll();
+        this.characterRepository.deleteAll();
+        this.factionRepository.deleteAll();
+        long executionTime = System.currentTimeMillis() - start;
+        LOGGER.info("EmptyData() has been executed in " + executionTime + "ms");
+    }
 
     //******************************************************************************************************************
     // VERSION

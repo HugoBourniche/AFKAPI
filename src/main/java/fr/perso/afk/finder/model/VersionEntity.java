@@ -24,7 +24,7 @@ public class VersionEntity {
     //******************************************************************************************************************
 
     @Id
-    private String version;
+    private double version;
 
     //******************************************************************************************************************
     // CONSTRUCTOR
@@ -34,8 +34,8 @@ public class VersionEntity {
     // METHODS
     //******************************************************************************************************************
 
-    public boolean isUpdated(String version) {
-        return Integer.parseInt(this.version) < Integer.parseInt(version);
+    public boolean isUpdated(double version) {
+        return this.version < version;
     }
 
 }

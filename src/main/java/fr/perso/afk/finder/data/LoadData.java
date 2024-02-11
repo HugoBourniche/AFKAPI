@@ -52,13 +52,17 @@ public class LoadData {
     public void loadData() throws Exception {
         LOGGER.info("Loading Data");
         this.loadMultipartFile();
-        if (!isNewVersion()) return;
-        this.loadFactions();
-        this.loadCharacters();
-        this.loadTeamsAndFights();
-        LOGGER.info(this.charsCount + " characters added");
-        LOGGER.info(this.teamsCount + " teams added");
-        LOGGER.info(this.fightCount + " fights added");
+        if (isNewVersion()) {
+            LOGGER.info("is new version");
+            this.emptyData();
+            this.loadFactions();
+            this.loadCharacters();
+            this.loadTeamsAndFights();
+
+            LOGGER.info(this.charsCount + " characters added");
+            LOGGER.info(this.teamsCount + " teams added");
+            LOGGER.info(this.fightCount + " fights added");
+        }
         LOGGER.info("All the data is loaded");
     }
 
@@ -82,13 +86,18 @@ public class LoadData {
      */
     private boolean isNewVersion() {
         Sheet s = this.excelWB.getSheet("Personnages");
-        String version = Double.toString(s.getRow(0).getCell(0).getNumericCellValue());
+        double version = s.getRow(0).getCell(0).getNumericCellValue();
         VersionEntity currentVersion = this.dbService.getVersion();
         if (currentVersion == null || currentVersion.isUpdated(version)) {
             this.dbService.replaceVersion(currentVersion, new VersionEntity(version));
             return true;
         }
         return FORCE_UPDATE;
+    }
+
+    private void emptyData() {
+        LOGGER.info("Empty data");
+        this.dbService.emptyData();
     }
 
     private void loadFactions() {
@@ -189,8 +198,6 @@ public class LoadData {
 
             t1 = this.saveTeam(t1, teams);
             t2 = this.saveTeam(t2, teams);
-            if (t1 != null)               this.teamsCount++;
-            if (t2 != null)               this.teamsCount++;
             if (t1 != null && t2 != null) {
                 dbService.saveFight(new FightEntity(t1, t2, sheetName));
                 this.fightCount++;
@@ -204,6 +211,8 @@ public class LoadData {
                 int index = teams.indexOf(t);
                 t = teams.get(index);
                 t.setUse(t.getUse()+1);
+            } else {
+                this.teamsCount++;
             }
             dbService.saveTeam(t);
             teams.add(t);
