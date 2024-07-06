@@ -24,6 +24,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +40,7 @@ public class LoadData {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LoadData.class);
     private static final Boolean FORCE_UPDATE = false;
+    private static final List<String> FIGHTS_KEY_WORDS = Arrays.asList("CHAMPION", "TRESOR", "Combats", "Campain", "SAISON");
 
     @Autowired private DBService dbService;
 
@@ -52,7 +54,7 @@ public class LoadData {
     public void loadData() throws Exception {
         LOGGER.info("Loading Data");
         this.loadMultipartFile();
-        if (isNewVersion()) {
+        if (true || isNewVersion()) {
             LOGGER.info("is new version");
             this.emptyData();
             this.loadFactions();
@@ -166,14 +168,65 @@ public class LoadData {
 //        dbService.emptyTeams();
         List<TeamEntity> teams = new ArrayList<>();
         Map<String, CharacterEntity> charactersMap = this.dbService.mapAllCharacters();
-
-        this.loadTeamsAndFightBySheet(teams, charactersMap, "Combats", 1, 2);
-        this.loadTeamsAndFightBySheet(teams, charactersMap, "Épreuves", 4, 3);
+        this.loadEpreuveTeams(teams, charactersMap);
+        // Load others fights
         for (int sheetIndex = 0; sheetIndex < this.excelWB.getNumberOfSheets(); sheetIndex++) {
             Sheet currentSheet = this.excelWB.getSheetAt(sheetIndex);
             String sheetName = currentSheet.getSheetName();
-            if (sheetName.contains("SAISON") || sheetName.contains("TRESOR")) {
+            if (FIGHTS_KEY_WORDS.contains(sheetName.split("-")[0])) {
                 this.loadTeamsAndFightBySheet(teams, charactersMap, sheetName, 1, 2);
+            }
+        }
+    }
+
+    private void loadEpreuveTeams(List<TeamEntity> teams, Map<String, CharacterEntity> characters) {
+        LOGGER.info("Load Epreuves teams");
+        String currentCharacterName = "";
+
+        Sheet sheet = this.excelWB.getSheet("Épreuves");
+        for (int r = 1; r < sheet.getLastRowNum(); r+=5) {
+            TeamEntity teamAlly = new TeamEntity();
+            TeamEntity teamEnemy = new TeamEntity();
+            TeamEntity guildTeamAlly = new TeamEntity();
+            TeamEntity guildTeamEnemy = new TeamEntity();
+            TeamEntity guildTeamAllyBis = new TeamEntity();
+            if (sheet.getRow(r).getCell(1) != null && !sheet.getRow(r).getCell(1).getStringCellValue().equals("")) {
+                currentCharacterName = sheet.getRow(r).getCell(1).getStringCellValue();
+            }
+            if (r+5 > sheet.getLastRowNum()) {
+                continue;
+            }
+            for (int countRow = r; countRow < r+5; countRow++) {
+                Row row = sheet.getRow(countRow);
+                String teamAllyCharacterName = row.getCell(4).getStringCellValue().toLowerCase();
+                this.addCharacterToTeam(characters, teamAlly, teamAllyCharacterName);
+                String teamEnemyCharacterName = row.getCell(3).getStringCellValue().toLowerCase();
+                this.addCharacterToTeam(characters, teamEnemy, teamEnemyCharacterName);
+                String guildTeamAllyCharacterName = row.getCell(9).getStringCellValue().toLowerCase();
+                this.addCharacterToTeam(characters, guildTeamAlly, guildTeamAllyCharacterName);
+                String guildTeamEnemyCharacterName = row.getCell(10).getStringCellValue().toLowerCase();
+                this.addCharacterToTeam(characters, guildTeamEnemy, guildTeamEnemyCharacterName);
+                String guildTeamAllyBisCharacterName = row.getCell(11).getStringCellValue().toLowerCase();
+                this.addCharacterToTeam(characters, guildTeamAllyBis, guildTeamAllyBisCharacterName);
+            }
+
+            teamAlly = this.saveTeam(teamAlly, teams);
+            teamEnemy = this.saveTeam(teamEnemy, teams);
+            guildTeamAlly = this.saveTeam(guildTeamAlly, teams);
+            guildTeamEnemy = this.saveTeam(guildTeamEnemy, teams);
+            guildTeamAllyBis = this.saveTeam(guildTeamAllyBis, teams);
+
+            if (teamAlly != null && teamEnemy != null) {
+                dbService.saveFight(new FightEntity(teamAlly, teamEnemy, "Épreuves-" + currentCharacterName));
+                this.fightCount++;
+            }
+            if (guildTeamAlly != null && guildTeamEnemy != null) {
+                dbService.saveFight(new FightEntity(guildTeamAlly, guildTeamEnemy, "Épreuves de guilde-" + currentCharacterName));
+                this.fightCount++;
+            }
+            if (guildTeamAllyBis != null && guildTeamEnemy != null) {
+                dbService.saveFight(new FightEntity(guildTeamAllyBis, guildTeamEnemy, "Épreuves de guilde-" + currentCharacterName + "-2"));
+                this.fightCount++;
             }
         }
     }
