@@ -160,15 +160,13 @@ public class DBService {
         return teams;
     }
 
-    // TODO Find a better way to do this (using SQL Request)
     public List<TeamEntity> findTeamContainingCharacter(List<String> characterNames) {
         List<TeamEntity> teams = new ArrayList<>();
         if (characterNames.size() == 0) return teams;
-        for (TeamEntity team : teamsRepository.findAll()) {
-            boolean isValidTeam = true;
-            for(String characterName : characterNames) isValidTeam = isValidTeam && team.contains(characterName);
-            if (isValidTeam) teams.add(team);
-        }
+        Optional<CharacterEntity> characterEntity = this.characterRepository.findById(characterNames.get(0));
+        if (characterEntity.isEmpty()) return teams;
+        if (characterNames.size() == 1) return characterEntity.get().getTeams();
+        teams = characterEntity.get().getTeamsContaining(characterNames);
         return teams;
     }
 

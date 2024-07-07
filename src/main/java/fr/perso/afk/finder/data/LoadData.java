@@ -275,9 +275,9 @@ public class LoadData {
     }
 
     private void addCharacterToTeam(Map<String, CharacterEntity> charactersMap, TeamEntity teamEntity, String characterName) {
-        CharacterEntity character1 = charactersMap.get(characterName);
-        if (character1 != null) {
-            teamEntity.addCharacter(character1);
+        CharacterEntity character = charactersMap.get(characterName);
+        if (character != null) {
+            teamEntity.addCharacter(character);
         } else {
             if (!"".equals(characterName)) {
                 LOGGER.info(characterName + " n'existe pas");

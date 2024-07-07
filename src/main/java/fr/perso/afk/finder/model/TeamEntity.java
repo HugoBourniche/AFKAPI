@@ -12,59 +12,89 @@ import java.util.stream.Collectors;
  * @author: Hugo Bourniche
  * 05/12/2021
  */
-
+@Data
 @Entity
-@Getter
-@Setter
 @Table(name = "teams")
 public class TeamEntity {
+
+    //******************************************************************************************************************
+    // ATTRIBUTES
+    //******************************************************************************************************************
 
     @Id
     @GeneratedValue(strategy= GenerationType.AUTO)
     protected UUID id;
 
-    @ManyToMany
-    private List<CharacterEntity> characters = new ArrayList<>();
+    @OneToMany(mappedBy = "team", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<TeamCharacterEntity> teamCharacters = new ArrayList<>();
 
     private Integer use;
+
+    //******************************************************************************************************************
+    // CONSTRUCTOR
+    //******************************************************************************************************************
 
     public TeamEntity() {
         this.use = 1;
     }
 
+    //******************************************************************************************************************
+    // PUBLIC METHODS
+    //******************************************************************************************************************
+
     public Integer addCharacter(CharacterEntity character) {
-        this.characters.add(character);
-        return this.characters.size();
+        TeamCharacterEntity teamCharacter = new TeamCharacterEntity();
+        teamCharacter.setCharacter(character);
+        teamCharacter.setTeam(this);
+        teamCharacter.setPosition(this.teamCharacters.size() + 1);
+        this.teamCharacters.add(teamCharacter);
+        return this.teamCharacters.size();
     }
 
     public void removeCharacter(int position) {
-        this.characters.remove(position);
+        this.teamCharacters.remove(position);
     }
+
+    //******************************************************************************************************************
+    // GETTER METHODS
+    //******************************************************************************************************************
 
     public boolean isValidTeam() {
-        return this.characters.size() == 5;
-    }
-
-    public boolean contains(String name) {
-        for (CharacterEntity character : this.characters) {
-            if (character.getName().equals(name)) {
-                return true;
-            }
-        }
-        return false;
+        return this.teamCharacters.size() == 5;
     }
 
     public Integer getCharacterPosition(String name) {
-        for (int i = 0; i < characters.size(); i++) {
-            if (this.characters.get(i).getName().equals(name)) {
-                return i + 1;
+        for (TeamCharacterEntity teamCharacter : teamCharacters) {
+            if (teamCharacter.getCharacter().getName().equals(name)) {
+                return teamCharacter.getPosition();
             }
         }
         return 0;
     }
 
     public List<CharacterEntity> getAllOtherCharacters(String name) {
-        return this.characters.stream().filter(characterEntity -> !characterEntity.getName().equals(name)).collect(Collectors.toList());
+        return this.teamCharacters.stream().map(TeamCharacterEntity::getCharacter).filter(character -> !character.getName().equals(name)).collect(Collectors.toList());
+    }
+
+    public List<CharacterEntity> getCharacters() {
+        return teamCharacters.stream().map(TeamCharacterEntity::getCharacter).collect(Collectors.toList());
+    }
+
+    public List<String> getCharactersByName() {
+        return teamCharacters.stream().map(teamCharacterEntity -> teamCharacterEntity.getCharacter().getName()).collect(Collectors.toList());
+    }
+
+    //******************************************************************************************************************
+    // OVERRIDE METHODS
+    //******************************************************************************************************************
+
+    public boolean contains(String name) {
+        for (TeamCharacterEntity character : this.teamCharacters) {
+            if (character.getCharacter().getName().equals(name)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -72,19 +102,11 @@ public class TeamEntity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         TeamEntity team = (TeamEntity) o;
-        for (int i = 0; i < this.characters.size(); i++) {
-            if (!characters.get(i).getName().equals(team.getCharacters().get(i).getName())) {
+        for (int i = 0; i < this.teamCharacters.size(); i++) {
+            if (!teamCharacters.get(i).getCharacter().getName().equals(team.getTeamCharacters().get(i).getCharacter().getName())) {
                 return false;
             }
         }
         return true;
-    }
-
-    public List<String> getCharactersByName() {
-        List<String> charactersByName = new ArrayList<>();
-        for (CharacterEntity character: characters) {
-            charactersByName.add(character.getName());
-        }
-        return charactersByName;
     }
 }
