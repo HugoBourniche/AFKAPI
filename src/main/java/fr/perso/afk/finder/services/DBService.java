@@ -97,12 +97,7 @@ public class DBService {
     public List<CharacterEntity> findAllCharacters() {
         List<CharacterEntity> characters = new ArrayList<>();
         characterRepository.findAll().forEach(characters::add);
-        characters.sort(new Comparator<>() {
-            @Override
-            public int compare(CharacterEntity c1, CharacterEntity c2) {
-                return c1.getName().compareTo(c2.getName());
-            }
-        });
+        characters.sort(Comparator.comparing(CharacterEntity::getName));
         return characters;
     }
 
@@ -160,15 +155,13 @@ public class DBService {
         return teams;
     }
 
-    // TODO Find a better way to do this (using SQL Request)
     public List<TeamEntity> findTeamContainingCharacter(List<String> characterNames) {
         List<TeamEntity> teams = new ArrayList<>();
         if (characterNames.size() == 0) return teams;
-        for (TeamEntity team : teamsRepository.findAll()) {
-            boolean isValidTeam = true;
-            for(String characterName : characterNames) isValidTeam = isValidTeam && team.contains(characterName);
-            if (isValidTeam) teams.add(team);
-        }
+        CharacterEntity characterEntity = fetchCharacterWithTheLessTeams(characterNames);
+        if (characterEntity == null) return teams;
+        if (characterNames.size() == 1) return characterEntity.getTeams();
+        teams = characterEntity.getTeamsContaining(characterNames);
         return teams;
     }
 
@@ -194,26 +187,57 @@ public class DBService {
         fightRepository.save(fight);
     }
 
-    public List<FightEntity> findFightByWinnerTeam(List<String> characters) {
-        List<TeamEntity> teams = this.findTeamContainingCharacter(characters);
-        return this.fightRepository.findByIdWinnerIn(teams);
+    public void emptyFights() {
+        fightRepository.deleteAll();
     }
 
-    public List<FightEntity> findFightByLosingTeam(List<String> characters) {
+    // Winning
+
+    public List<FightEntity> findFightByWinnerTeamMatesName(List<String> characters) {
         List<TeamEntity> teams = this.findTeamContainingCharacter(characters);
-        return this.fightRepository.findByIdLoserIn(teams);
+        return this.findFightByWinnerTeams(teams);
+    }
+
+    public List<FightEntity> findFightByWinnerTeams(List<TeamEntity> teams) {
+        return this.fightRepository.findByIdWinnerIn(teams);
     }
 
     public Integer countWins(TeamEntity team) {
         return this.fightRepository.countByIdWinner(team);
     }
 
+    // Losing
+
+    public List<FightEntity> findFightByLosingTeamMatesName(List<String> characters) {
+        List<TeamEntity> teams = this.findTeamContainingCharacter(characters);
+        return this.findFightByLosingTeams(teams);
+    }
+
+    public List<FightEntity> findFightByLosingTeams(List<TeamEntity> teams) {
+        return this.fightRepository.findByIdLoserIn(teams);
+    }
+
     public Integer countLose(TeamEntity team) {
         return this.fightRepository.countByIdLoser(team);
     }
 
-    public void emptyFights() {
-        fightRepository.deleteAll();
-    }
+    //******************************************************************************************************************
+    // PRIVATE METHODS
+    //******************************************************************************************************************
 
+    private CharacterEntity fetchCharacterWithTheLessTeams(List<String> characterNames) {
+        CharacterEntity character = null;
+        int nbTeams = -1;
+        for (String characterName : characterNames) {
+            Optional<CharacterEntity> currentCharacterOptional = this.characterRepository.findById(characterName);
+            if (currentCharacterOptional.isEmpty()) continue;
+            CharacterEntity currentCharacter = currentCharacterOptional.get();
+            int currentNbTeams = currentCharacter.getTeamCharacters().size();
+            if (nbTeams < 0 || nbTeams > currentNbTeams) {
+                character = currentCharacter;
+                nbTeams = currentNbTeams;
+            }
+        }
+        return character;
+    }
 }

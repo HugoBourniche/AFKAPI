@@ -58,9 +58,9 @@ public class TeamController {
         TeamSelectedResponse selectedTeam = new TeamSelectedResponse(this.sharedData.getMyTeam());
         List<TeamEntity> associatedTeam = dbService.findTeamContainingCharacter(this.sharedData.getSelectedCharactersName());
         selectedTeam.addTeams(associatedTeam);
-        selectedTeam.addWins(dbService.findFightByWinnerTeam(this.sharedData.getSelectedCharactersName()));
-        selectedTeam.addLosts(dbService.findFightByLosingTeam(this.sharedData.getSelectedCharactersName()));
-    	return new ResponseEntity<TeamSelectedResponse>(selectedTeam, HttpStatus.OK);
+        selectedTeam.addWins(dbService.findFightByWinnerTeamMatesName(this.sharedData.getSelectedCharactersName()));
+        selectedTeam.addLosts(dbService.findFightByLosingTeamMatesName(this.sharedData.getSelectedCharactersName()));
+    	return new ResponseEntity<>(selectedTeam, HttpStatus.OK);
     }
 
 }

@@ -3,8 +3,8 @@ package fr.perso.afk.finder.model.responses;
 import java.util.ArrayList;
 import java.util.List;
 
-import fr.perso.afk.finder.model.CharacterEntity;
 import fr.perso.afk.finder.model.FightEntity;
+import fr.perso.afk.finder.model.TeamCharacterEntity;
 import fr.perso.afk.finder.model.TeamEntity;
 import lombok.Data;
 
@@ -21,9 +21,8 @@ public class TeamSelectedResponse {
 	List<FightResponse> lost = new ArrayList<>();
 
 	public TeamSelectedResponse(TeamEntity team) {
-		int index = 1;
-		for(CharacterEntity character : team.getCharacters()) {
-			this.characters.add(new CharacterResponse(character, index++));
+		for(TeamCharacterEntity teamCharacter : team.getTeamCharacters()) {
+			this.characters.add(new CharacterResponse(teamCharacter.getCharacter(), teamCharacter.getPosition()));
 		}
 	}
 

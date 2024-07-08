@@ -1,6 +1,6 @@
 package fr.perso.afk.finder.model.responses;
 
-import fr.perso.afk.finder.model.CharacterEntity;
+import fr.perso.afk.finder.model.TeamCharacterEntity;
 import fr.perso.afk.finder.model.TeamEntity;
 import lombok.Data;
 
@@ -17,8 +17,8 @@ public class TeamResponse {
     List<CharacterResponse> characterResponses = new ArrayList<>();
 
     public TeamResponse(TeamEntity teamEntity) {
-        for (CharacterEntity character : teamEntity.getCharacters()) {
-            this.characterResponses.add(new CharacterResponse(character, 0)); // TODO Set the real position
+        for (TeamCharacterEntity teamCharacter : teamEntity.getTeamCharacters()) {
+            this.characterResponses.add(new CharacterResponse(teamCharacter.getCharacter(), teamCharacter.getPosition()));
         }
     }
 }

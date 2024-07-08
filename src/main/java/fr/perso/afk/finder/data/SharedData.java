@@ -32,10 +32,6 @@ public class SharedData {
     }
 
     public List<String> getSelectedCharactersName() {
-        List<String> names = new ArrayList<>();
-        for(CharacterEntity character : this.myTeam.getCharacters()) {
-            names.add(character.getName());
-        }
-        return names;
+        return new ArrayList<>(this.myTeam.getCharactersByName());
     }
 }

@@ -87,12 +87,11 @@ public class CharacterSolver {
 
     public Map<String, Integer> computeBullies(String name) {
         Map<String, Integer> bullies = new HashMap<>();
-        for (TeamEntity team : dbService.findTeamContainingCharacter(List.of(name))) {
-            for (FightEntity fight: dbService.findFightByWinnerTeam(team.getCharactersByName())) {
-                for (CharacterEntity bully : fight.getLoser().getCharacters()) {
-                    Integer count = (bullies.containsKey(bully.getName()) ? bullies.get(bully.getName()) + team.getUse() : 1);
-                    bullies.put(bully.getName(), count);
-                }
+        List<TeamEntity> teams = dbService.findTeamContainingCharacter(List.of(name));
+        for (FightEntity fight: dbService.findFightByWinnerTeams(teams)) {
+            for (CharacterEntity bully : fight.getLoser().getCharacters()) {
+                Integer count = (bullies.containsKey(bully.getName()) ? bullies.get(bully.getName()) + fight.getWinner().getUse() : 1);
+                bullies.put(bully.getName(), count);
             }
         }
         return bullies;
@@ -110,12 +109,11 @@ public class CharacterSolver {
 
     public Map<String, Integer> computeEnemies(String name) {
         Map<String, Integer> enemies = new HashMap<>();
-        for (TeamEntity team : dbService.findTeamContainingCharacter(List.of(name))) {
-            for (FightEntity fight: dbService.findFightByLosingTeam(team.getCharactersByName())) {
-                for (CharacterEntity enemy : fight.getWinner().getCharacters()) {
-                    Integer count = (enemies.containsKey(enemy.getName()) ? enemies.get(enemy.getName()) + team.getUse() : 1);
-                    enemies.put(enemy.getName(), count);
-                }
+        List<TeamEntity> teams = dbService.findTeamContainingCharacter(List.of(name));
+        for (FightEntity fight: dbService.findFightByLosingTeams(teams)) {
+            for (CharacterEntity enemy : fight.getWinner().getCharacters()) {
+                Integer count = (enemies.containsKey(enemy.getName()) ? enemies.get(enemy.getName()) + fight.getLoser().getUse() : 1);
+                enemies.put(enemy.getName(), count);
             }
         }
         return enemies;
