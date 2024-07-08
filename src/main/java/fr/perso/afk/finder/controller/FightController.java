@@ -32,7 +32,7 @@ public class FightController {
     @GetMapping(value="/winning-fights")
     public ResponseEntity <FightsResponse> addCharacter() {
         LOGGER.info("Get Winning Fights");
-        List<FightEntity> fights = dbService.findFightByWinnerTeam(sharedData.getSelectedCharactersName());
+        List<FightEntity> fights = dbService.findFightByWinnerTeamMatesName(sharedData.getSelectedCharactersName());
         return new ResponseEntity<>(new FightsResponse(fights), HttpStatus.OK);
     }
 
