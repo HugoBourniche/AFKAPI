@@ -1,11 +1,16 @@
 package fr.perso.afk.finder.data;
 
+import fr.perso.afk.finder.exceptions.UndefinedCharacterException;
+import fr.perso.afk.finder.exceptions.UndefinedRankException;
 import fr.perso.afk.finder.model.CharacterEntity;
 import fr.perso.afk.finder.model.FightEntity;
+import fr.perso.afk.finder.model.RankEntity;
 import fr.perso.afk.finder.model.TeamEntity;
 import fr.perso.afk.finder.model.VersionEntity;
 import fr.perso.afk.finder.model.characteristics.FactionEntity;
 import fr.perso.afk.finder.services.DBService;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -23,13 +28,16 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static fr.perso.afk.finder.utils.Utils.convertRanksToInt;
+import static fr.perso.afk.finder.utils.Utils.convertCharacterName;
+import static fr.perso.afk.finder.utils.Utils.convertRankToInt;
 
 /**
  * @author: Hugo Bourniche
@@ -41,10 +49,13 @@ public class LoadData {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoadData.class);
     private static final Boolean FORCE_UPDATE = false;
     private static final List<String> FIGHTS_KEY_WORDS = Arrays.asList("CHAMPION", "TRESOR", "Combats", "Campain", "SAISON");
+    private static final List<String> RANK_ADVISE_KEY_WORDS = Arrays.asList("Signature", "Furniture", "Engraving", "Artifact");
 
     @Autowired private DBService dbService;
 
     private Workbook excelWB;
+
+    private final Map<String, CharacterEntity> characters = new HashMap<>();
 
     private int charsCount = 0;
     private int teamsCount = 0;
@@ -59,6 +70,7 @@ public class LoadData {
             this.emptyData();
             this.loadFactions();
             this.loadCharacters();
+            this.loadRanks();
             this.loadTeamsAndFights();
 
             LOGGER.info(this.charsCount + " characters added");
@@ -113,11 +125,10 @@ public class LoadData {
 
     private void loadCharacters() {
         LOGGER.info("Load Characters");
-        Map<String, Integer> rankMap = mapRanks();
         Sheet sheet = this.excelWB.getSheet("Personnages");
         for (int r = 2; r < sheet.getLastRowNum(); r++) {
             Row row = sheet.getRow(r);
-            if (row.getCell(2).getStringCellValue().equals("")) {
+            if (row.getCell(2).getStringCellValue().isEmpty()) {
                 continue;
             }
             String characterName        = row.getCell(2).getStringCellValue();
@@ -127,8 +138,6 @@ public class LoadData {
             String characterClass       = row.getCell(6).getStringCellValue();
             String characterRole        = row.getCell(7).getStringCellValue();
             String characterSummary     = row.getCell(8).getStringCellValue();
-            Integer characterRank       = -1;
-            if (rankMap.containsKey(characterName)) { characterRank = rankMap.get(characterName); }
             if (characterRole.equals("Tank")) {
                 characterRole = "Tank.";
             }
@@ -139,47 +148,101 @@ public class LoadData {
                     characterClass,
                     characterRole,
                     characterSummary,
-                    characterRank,
                     characterFaction);
             if (!this.dbService.charactersExist(characterName)) {
                 this.charsCount++;
             }
             this.dbService.saveCharacter(newCharacter);
+            this.characters.put(characterName.toLowerCase(), newCharacter);
         }
     }
 
-    private Map<String, Integer> mapRanks() {
-        Map<String, Integer> ranks = new HashMap<>();
-        Sheet sheet = this.excelWB.getSheet("Rangs-202305");
-        for (int r = 1; r < sheet.getLastRowNum(); r++) {
-            Row row = sheet.getRow(r);
-            String characterName = row.getCell(0).getStringCellValue();
-            String pveRank = row.getCell(1).getStringCellValue();
-            String pvpRank = row.getCell(2).getStringCellValue();
-            String bossRank = row.getCell(3).getStringCellValue();
-            Integer rank = convertRanksToInt(pveRank, pvpRank, bossRank);
-            ranks.put(characterName, rank);
+    private void loadRanks() {
+        LOGGER.info("Load Ranks");
+
+        for (int sheetIndex = 0; sheetIndex < this.excelWB.getNumberOfSheets(); sheetIndex++) {
+            Sheet currentSheet = this.excelWB.getSheetAt(sheetIndex);
+            if (currentSheet.getSheetName().contains("Rangs")) {
+                try {
+                    loadRankBySheet(currentSheet);
+                } catch (UndefinedCharacterException e) {
+                    e.printStackTrace();
+                }
+            }
         }
-        return ranks;
+    }
+
+    private void loadRankBySheet(Sheet currentSheet) throws UndefinedCharacterException {
+        LOGGER.info("Loading {}", currentSheet.getSheetName());
+        // Add 01 day because ranks
+        String currentDate = currentSheet.getSheetName().split("-")[1] + "01";
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
+        LocalDate date = LocalDate.parse(currentDate, formatter);
+        // Prepare titles
+        List<String> titles = new ArrayList<>();
+        Row row = currentSheet.getRow(0);
+        for (int c = 1; c < row.getLastCellNum(); c++) {
+            titles.add(row.getCell(c).getStringCellValue());
+        }
+        // Read rows
+        for (int r = 1; r < currentSheet.getLastRowNum(); r++) {
+            Row currentRow = currentSheet.getRow(r);
+            if (currentRow.getLastCellNum() == 0) {
+                continue;
+            }
+            RankEntity rankEntity = new RankEntity();
+            rankEntity.setPosition(r);
+            rankEntity.setDate(date);
+            String characterName = currentRow.getCell(0).getStringCellValue();
+            String convertedName = convertCharacterName(characterName);
+            CharacterEntity character = characters.get(convertedName);
+            if (character == null) {
+                throw new UndefinedCharacterException(characterName + " does not exists");
+            }
+            rankEntity.setCharacter(character);
+            // Read cells after the character name
+            for (int index = 0; index < titles.size(); index++) {
+                // Add 1 because you start reading after the character name
+                Cell cell = currentRow.getCell(index + 1);
+                String title = titles.get(index);
+                if ("".equals(title)) continue;
+                String value;
+                if (cell.getCellType() == CellType.NUMERIC) {
+                    value = cell.getNumericCellValue() + "";
+                } else if (cell.getCellType() == CellType.FORMULA) {
+                 value = cell.getCellFormula();
+                } else {
+                    value = cell.getStringCellValue();
+                }
+                try {
+                    if (RANK_ADVISE_KEY_WORDS.contains(title)) {
+                        rankEntity.getMappedAdvises().put(title, value);
+                    } else {
+                        Integer convertedValue = "".equals(value) ? -1 : convertRankToInt(value);
+                        rankEntity.getMappedValues().put(title, convertedValue);
+                    }
+                } catch (UndefinedRankException e) {
+                    e.printStackTrace();
+                }
+            }
+            dbService.saveRank(rankEntity);
+        }
     }
 
     private void loadTeamsAndFights() {
-//        dbService.emptyFights();
-//        dbService.emptyTeams();
         List<TeamEntity> teams = new ArrayList<>();
-        Map<String, CharacterEntity> charactersMap = this.dbService.mapAllCharacters();
-        this.loadEpreuveTeams(teams, charactersMap);
+        this.loadEpreuveTeams(teams);
         // Load others fights
         for (int sheetIndex = 0; sheetIndex < this.excelWB.getNumberOfSheets(); sheetIndex++) {
             Sheet currentSheet = this.excelWB.getSheetAt(sheetIndex);
             String sheetName = currentSheet.getSheetName();
             if (FIGHTS_KEY_WORDS.contains(sheetName.split("-")[0])) {
-                this.loadTeamsAndFightBySheet(teams, charactersMap, sheetName, 1, 2);
+                this.loadTeamsAndFightBySheet(teams, sheetName, 1, 2);
             }
         }
     }
 
-    private void loadEpreuveTeams(List<TeamEntity> teams, Map<String, CharacterEntity> characters) {
+    private void loadEpreuveTeams(List<TeamEntity> teams) {
         LOGGER.info("Load Epreuves teams");
         String currentCharacterName = "";
 
@@ -190,7 +253,7 @@ public class LoadData {
             TeamEntity guildTeamAlly = new TeamEntity();
             TeamEntity guildTeamEnemy = new TeamEntity();
             TeamEntity guildTeamAllyBis = new TeamEntity();
-            if (sheet.getRow(r).getCell(1) != null && !sheet.getRow(r).getCell(1).getStringCellValue().equals("")) {
+            if (sheet.getRow(r).getCell(1) != null && !sheet.getRow(r).getCell(1).getStringCellValue().isEmpty()) {
                 currentCharacterName = sheet.getRow(r).getCell(1).getStringCellValue();
             }
             if (r+5 > sheet.getLastRowNum()) {
@@ -199,15 +262,15 @@ public class LoadData {
             for (int countRow = r; countRow < r+5; countRow++) {
                 Row row = sheet.getRow(countRow);
                 String teamAllyCharacterName = row.getCell(4).getStringCellValue().toLowerCase();
-                this.addCharacterToTeam(characters, teamAlly, teamAllyCharacterName);
+                this.addCharacterToTeam(teamAlly, teamAllyCharacterName);
                 String teamEnemyCharacterName = row.getCell(3).getStringCellValue().toLowerCase();
-                this.addCharacterToTeam(characters, teamEnemy, teamEnemyCharacterName);
+                this.addCharacterToTeam(teamEnemy, teamEnemyCharacterName);
                 String guildTeamAllyCharacterName = row.getCell(9).getStringCellValue().toLowerCase();
-                this.addCharacterToTeam(characters, guildTeamAlly, guildTeamAllyCharacterName);
+                this.addCharacterToTeam(guildTeamAlly, guildTeamAllyCharacterName);
                 String guildTeamEnemyCharacterName = row.getCell(10).getStringCellValue().toLowerCase();
-                this.addCharacterToTeam(characters, guildTeamEnemy, guildTeamEnemyCharacterName);
+                this.addCharacterToTeam(guildTeamEnemy, guildTeamEnemyCharacterName);
                 String guildTeamAllyBisCharacterName = row.getCell(11).getStringCellValue().toLowerCase();
-                this.addCharacterToTeam(characters, guildTeamAllyBis, guildTeamAllyBisCharacterName);
+                this.addCharacterToTeam(guildTeamAllyBis, guildTeamAllyBisCharacterName);
             }
 
             teamAlly = this.saveTeam(teamAlly, teams);
@@ -231,7 +294,7 @@ public class LoadData {
         }
     }
 
-    private void loadTeamsAndFightBySheet(List<TeamEntity> teams, Map<String, CharacterEntity> characters, String sheetName, int ally, int enemy) {
+    private void loadTeamsAndFightBySheet(List<TeamEntity> teams, String sheetName, int ally, int enemy) {
         LOGGER.info("Load " + sheetName + " teams");
         Sheet sheet = this.excelWB.getSheet(sheetName);
         for (int r = 1; r < sheet.getLastRowNum(); r+=5) {
@@ -243,10 +306,10 @@ public class LoadData {
             for (int countRow = r; countRow < r+5; countRow++) {
                 Row row = sheet.getRow(countRow);
                 String character1Name = row.getCell(ally).getStringCellValue().toLowerCase();
-                this.addCharacterToTeam(characters, t1, character1Name);
+                this.addCharacterToTeam(t1, character1Name);
                 String character2Name = row.getCell(enemy).getStringCellValue().toLowerCase();
-                this.addCharacterToTeam(characters, t2, character2Name);
-                if ("".equals(character1Name) && "".equals(character2Name)) break;
+                this.addCharacterToTeam(t2, character2Name);
+                if (character1Name.isEmpty() && character2Name.isEmpty()) break;
             }
 
             t1 = this.saveTeam(t1, teams);
@@ -274,12 +337,12 @@ public class LoadData {
         return null;
     }
 
-    private void addCharacterToTeam(Map<String, CharacterEntity> charactersMap, TeamEntity teamEntity, String characterName) {
-        CharacterEntity character = charactersMap.get(characterName);
+    private void addCharacterToTeam(TeamEntity teamEntity, String characterName) {
+        CharacterEntity character = characters.get(characterName.toLowerCase());
         if (character != null) {
             teamEntity.addCharacter(character);
         } else {
-            if (!"".equals(characterName)) {
+            if (!characterName.isEmpty()) {
                 LOGGER.info(characterName + " n'existe pas");
             }
         }

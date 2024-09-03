@@ -3,6 +3,7 @@ package fr.perso.afk.finder.services;
 import fr.perso.afk.finder.model.CharacterEntity;
 import fr.perso.afk.finder.model.FightEntity;
 import fr.perso.afk.finder.model.FightId;
+import fr.perso.afk.finder.model.RankEntity;
 import fr.perso.afk.finder.model.TeamEntity;
 import fr.perso.afk.finder.model.VersionEntity;
 import fr.perso.afk.finder.model.characteristics.FactionEntity;
@@ -22,6 +23,7 @@ import java.util.*;
 @Repository interface FactionRepository     extends CrudRepository<FactionEntity, String> {}
 @Repository interface CharacterRepository   extends CrudRepository<CharacterEntity, String> {}
 @Repository interface TeamRepository        extends CrudRepository<TeamEntity, UUID> {}
+@Repository interface RankRepository       extends CrudRepository<RankEntity, UUID> {}
 @Repository interface FightRepository       extends CrudRepository<FightEntity, FightId> {
     List<FightEntity> findByIdWinnerIn(List<TeamEntity> teams);
     List<FightEntity> findByIdLoserIn(List<TeamEntity> teams);
@@ -52,6 +54,7 @@ public class DBService {
     @Autowired private FactionRepository factionRepository;
     @Autowired private CharacterRepository characterRepository;
     @Autowired private TeamRepository teamsRepository;
+    @Autowired private RankRepository rankRepository;
     @Autowired private FightRepository fightRepository;
 
     //******************************************************************************************************************
@@ -67,6 +70,7 @@ public class DBService {
         this.teamsRepository.deleteAll();
         this.characterRepository.deleteAll();
         this.factionRepository.deleteAll();
+        this.rankRepository.deleteAll();
         long executionTime = System.currentTimeMillis() - start;
         LOGGER.info("EmptyData() has been executed in " + executionTime + "ms");
     }
@@ -124,6 +128,14 @@ public class DBService {
     }
 
     //******************************************************************************************************************
+    // RANKS
+    //******************************************************************************************************************
+
+    public void saveRank(RankEntity rankEntity) {
+        rankRepository.save(rankEntity);
+    }
+
+    //******************************************************************************************************************
     // FACTIONS
     //******************************************************************************************************************
 
@@ -157,7 +169,7 @@ public class DBService {
 
     public List<TeamEntity> findTeamContainingCharacter(List<String> characterNames) {
         List<TeamEntity> teams = new ArrayList<>();
-        if (characterNames.size() == 0) return teams;
+        if (characterNames.isEmpty()) return teams;
         CharacterEntity characterEntity = fetchCharacterWithTheLessTeams(characterNames);
         if (characterEntity == null) return teams;
         if (characterNames.size() == 1) return characterEntity.getTeams();
