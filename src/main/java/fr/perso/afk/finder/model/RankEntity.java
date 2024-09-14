@@ -13,6 +13,7 @@ import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -34,12 +35,12 @@ public class RankEntity {
     private Integer position;
 //    private Integer value;
     private LocalDate date;
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "rank_values", joinColumns = @JoinColumn(name = "rank_id"))
     @MapKeyColumn(name = "type")
     @Column(name = "value")
     private Map<String, Integer> mappedValues = new HashMap<>();
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "rank_advises", joinColumns = @JoinColumn(name = "rank_id"))
     @MapKeyColumn(name = "type")
     @Column(name = "advise")

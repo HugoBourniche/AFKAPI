@@ -38,7 +38,7 @@ public class CharacterEntity {
     @OneToMany(mappedBy = "character", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TeamCharacterEntity> teamCharacters = new ArrayList<>();
 
-    @OneToMany(mappedBy = "character", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "character", cascade = CascadeType.ALL, orphanRemoval = true, fetch= FetchType.EAGER)
     private List<RankEntity> ranks = new ArrayList<>();
 
     //******************************************************************************************************************
