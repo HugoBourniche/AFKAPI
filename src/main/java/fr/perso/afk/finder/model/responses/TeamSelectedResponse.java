@@ -1,7 +1,9 @@
 package fr.perso.afk.finder.model.responses;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import fr.perso.afk.finder.model.FightEntity;
 import fr.perso.afk.finder.model.TeamCharacterEntity;
@@ -21,7 +23,7 @@ public class TeamSelectedResponse {
 	List<FightResponse> lost = new ArrayList<>();
 
 	public TeamSelectedResponse(TeamEntity team) {
-		for(TeamCharacterEntity teamCharacter : team.getTeamCharacters()) {
+		for(TeamCharacterEntity teamCharacter : team.getTeamCharacters().stream().sorted(Comparator.comparing(TeamCharacterEntity::getPosition)).collect(Collectors.toList())) {
 			this.characters.add(new CharacterResponse(teamCharacter.getCharacter(), teamCharacter.getPosition()));
 		}
 	}

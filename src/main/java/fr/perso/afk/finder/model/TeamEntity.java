@@ -4,6 +4,7 @@ import lombok.*;
 
 import javax.persistence.*;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -46,9 +47,18 @@ public class TeamEntity {
         TeamCharacterEntity teamCharacter = new TeamCharacterEntity();
         teamCharacter.setCharacter(character);
         teamCharacter.setTeam(this);
-        teamCharacter.setPosition(this.teamCharacters.size() + 1);
+        // Search unused position
+        int position = 1;
+        for (TeamCharacterEntity teamCharacterEntity : teamCharacters.stream().sorted(Comparator.comparing(TeamCharacterEntity::getPosition)).collect(Collectors.toList())) {
+            if (teamCharacterEntity.getPosition() == position) {
+                position++;
+            } else {
+                break;
+            }
+        }
+        teamCharacter.setPosition(position);
         this.teamCharacters.add(teamCharacter);
-        return this.teamCharacters.size();
+        return position;
     }
 
     public void removeCharacter(int position) {
