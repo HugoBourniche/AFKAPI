@@ -24,7 +24,7 @@ public class SharedData {
     }
 
     public void removeCharacter(String name) {
-        myTeam.removeCharacter(this.getCharacterPosition(name)-1);
+        myTeam.removeCharacter(this.getCharacterPosition(name));
     }
 
     public Integer getCharacterPosition(String name) {
