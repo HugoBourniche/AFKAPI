@@ -2,6 +2,7 @@ package fr.perso.afk.finder.controller;
 
 import fr.perso.afk.finder.data.SharedData;
 import fr.perso.afk.finder.data.TeamSolver;
+import fr.perso.afk.finder.exceptions.CharacterNotFoundException;
 import fr.perso.afk.finder.model.CharacterEntity;
 import fr.perso.afk.finder.model.TeamEntity;
 import fr.perso.afk.finder.model.responses.TeamSelectedResponse;
@@ -46,7 +47,7 @@ public class TeamController {
     }
 
     @PostMapping(value="/remove-character")
-    public ResponseEntity <?> removeCharacter(@RequestBody String name) {
+    public ResponseEntity <?> removeCharacter(@RequestBody String name) throws CharacterNotFoundException {
         LOGGER.info("Remove " + name + " to team");
         sharedData.removeCharacter(name);
         return new ResponseEntity<>(HttpStatus.OK);

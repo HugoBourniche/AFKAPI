@@ -1,5 +1,6 @@
 package fr.perso.afk.finder.data;
 
+import fr.perso.afk.finder.exceptions.CharacterNotFoundException;
 import fr.perso.afk.finder.model.CharacterEntity;
 import fr.perso.afk.finder.model.TeamEntity;
 import lombok.Data;
@@ -23,8 +24,8 @@ public class SharedData {
         return myTeam.addCharacter(character);
     }
 
-    public void removeCharacter(String name) {
-        myTeam.removeCharacter(this.getCharacterPosition(name));
+    public void removeCharacter(String name) throws CharacterNotFoundException {
+        myTeam.removeCharacter(name);
     }
 
     public Integer getCharacterPosition(String name) {

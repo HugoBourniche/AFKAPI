@@ -1,5 +1,6 @@
 package fr.perso.afk.finder.model;
 
+import fr.perso.afk.finder.exceptions.CharacterNotFoundException;
 import lombok.*;
 
 import javax.persistence.*;
@@ -61,8 +62,12 @@ public class TeamEntity {
         return position;
     }
 
-    public void removeCharacter(int position) {
-        this.teamCharacters.remove(position);
+    public void removeCharacter(String name) throws CharacterNotFoundException {
+        TeamCharacterEntity currentCharacter = getCharacterByName(name);
+        if (currentCharacter == null) {
+            throw new CharacterNotFoundException("Character " + name + " does not exists");
+        }
+        this.teamCharacters.remove(currentCharacter);
     }
 
     //******************************************************************************************************************
@@ -80,6 +85,15 @@ public class TeamEntity {
             }
         }
         return 0;
+    }
+
+    public TeamCharacterEntity getCharacterByName(String name) {
+        for (TeamCharacterEntity teamCharacter : teamCharacters) {
+            if (teamCharacter.getCharacter().getName().equals(name)) {
+                return teamCharacter;
+            }
+        }
+        return null;
     }
 
     public List<CharacterEntity> getAllOtherCharacters(String name) {
