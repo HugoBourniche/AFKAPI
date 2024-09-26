@@ -1,0 +1,34 @@
+
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/afk_data
+    username: afk_player
+    password: htmZHv2pn8ySKJw9
+  jpa:
+    show-sql: false
+    properties:
+     hibernate:
+      format_sql: true
+      dialect: org.hibernate.dialect.PostgreSQLDialect
+    ddl-auto: update
+afk:
+  data:
+    excel:
+      path: "src/main/resources/excelFile/AFKArena.xlsx"
+
+---
+############################################ PROD CONFIG ############################################################
+
+spring:
+  profiles:
+    active: prod
+
+afk:
+  data:
+    excel:
+      path: "./AFKArena.xlsx"
+
+server:
+  port: 9001
+

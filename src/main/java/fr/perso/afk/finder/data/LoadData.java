@@ -18,6 +18,7 @@ import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.mock.web.MockMultipartFile;
@@ -51,6 +52,9 @@ public class LoadData {
     private static final List<String> FIGHTS_KEY_WORDS = Arrays.asList("CHAMPION", "TRESOR", "Combats", "Campain", "SAISON");
     private static final List<String> RANK_ADVISE_KEY_WORDS = Arrays.asList("Signature", "Furniture", "Engraving", "Artifact");
 
+    @Value("${afk.data.excel.path}")
+    private String excelPath;
+
     @Autowired private DBService dbService;
 
     private Workbook excelWB;
@@ -81,7 +85,7 @@ public class LoadData {
     }
 
     private void loadMultipartFile() throws IOException {
-        Path path = Paths.get("src/main/resources/excelFile/AFKArena.xlsx");
+        Path path = Paths.get(excelPath);
         String name = "data.xlsx";
         String originalFileName = "data.xlsx";
         String contentType = "text/plain";
