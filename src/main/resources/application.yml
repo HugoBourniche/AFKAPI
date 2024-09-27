@@ -16,18 +16,21 @@ afk:
   data:
     excel:
       path: "src/main/resources/excelFile/AFKArena.xlsx"
+    trigger-reload: false
 
 ---
 ############################################ PROD CONFIG ############################################################
 
 spring:
-  profiles:
-    active: prod
+  config:
+    activate:
+      on-profile: prod
 
 afk:
   data:
     excel:
       path: "./AFKArena.xlsx"
+    trigger-reload: true
 
 server:
   port: 9001

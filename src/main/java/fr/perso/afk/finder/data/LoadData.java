@@ -48,12 +48,14 @@ import static fr.perso.afk.finder.utils.Utils.convertRankToInt;
 public class LoadData {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LoadData.class);
-    private static final Boolean FORCE_UPDATE = false;
     private static final List<String> FIGHTS_KEY_WORDS = Arrays.asList("CHAMPION", "TRESOR", "Combats", "Campain", "SAISON");
     private static final List<String> RANK_ADVISE_KEY_WORDS = Arrays.asList("Signature", "Furniture", "Engraving", "Artifact");
 
     @Value("${afk.data.excel.path}")
     private String excelPath;
+
+    @Value("${afk.data.trigger-reload}")
+    private Boolean triggerReload;
 
     @Autowired private DBService dbService;
 
@@ -69,7 +71,7 @@ public class LoadData {
     public void loadData() throws Exception {
         LOGGER.info("Loading Data");
         this.loadMultipartFile();
-        if (true || isNewVersion()) {
+        if (triggerReload) {
             LOGGER.info("is new version");
             this.emptyData();
             this.loadFactions();
@@ -80,8 +82,10 @@ public class LoadData {
             LOGGER.info(this.charsCount + " characters added");
             LOGGER.info(this.teamsCount + " teams added");
             LOGGER.info(this.fightCount + " fights added");
+            LOGGER.info("All the data is loaded");
+        } else {
+            LOGGER.info("Loading data ignored");
         }
-        LOGGER.info("All the data is loaded");
     }
 
     private void loadMultipartFile() throws IOException {
@@ -110,7 +114,7 @@ public class LoadData {
             this.dbService.replaceVersion(currentVersion, new VersionEntity(version));
             return true;
         }
-        return FORCE_UPDATE;
+        return false;
     }
 
     private void emptyData() {
