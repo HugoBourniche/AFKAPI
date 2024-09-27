@@ -79,9 +79,9 @@ public class LoadData {
             this.loadRanks();
             this.loadTeamsAndFights();
 
-            LOGGER.info(this.charsCount + " characters added");
-            LOGGER.info(this.teamsCount + " teams added");
-            LOGGER.info(this.fightCount + " fights added");
+            LOGGER.info("{} characters added", this.charsCount);
+            LOGGER.info("{} teams added", this.teamsCount);
+            LOGGER.info("{} fights added", this.fightCount);
             LOGGER.info("All the data is loaded");
         } else {
             LOGGER.info("Loading data ignored");
@@ -303,7 +303,7 @@ public class LoadData {
     }
 
     private void loadTeamsAndFightBySheet(List<TeamEntity> teams, String sheetName, int ally, int enemy) {
-        LOGGER.info("Load " + sheetName + " teams");
+        LOGGER.info("Load {} teams", sheetName);
         Sheet sheet = this.excelWB.getSheet(sheetName);
         for (int r = 1; r < sheet.getLastRowNum(); r+=5) {
             TeamEntity t1 = new TeamEntity();
@@ -351,7 +351,7 @@ public class LoadData {
             teamEntity.addCharacter(character);
         } else {
             if (!characterName.isEmpty()) {
-                LOGGER.info(characterName + " n'existe pas");
+                LOGGER.info("{} n'existe pas", characterName);
             }
         }
     }

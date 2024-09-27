@@ -72,7 +72,7 @@ public class DBService {
         this.factionRepository.deleteAll();
         this.rankRepository.deleteAll();
         long executionTime = System.currentTimeMillis() - start;
-        LOGGER.info("EmptyData() has been executed in " + executionTime + "ms");
+        LOGGER.info("EmptyData() has been executed in {}ms", executionTime);
     }
 
     //******************************************************************************************************************
