@@ -18,6 +18,7 @@ import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.mock.web.MockMultipartFile;
@@ -47,9 +48,14 @@ import static fr.perso.afk.finder.utils.Utils.convertRankToInt;
 public class LoadData {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LoadData.class);
-    private static final Boolean FORCE_UPDATE = false;
     private static final List<String> FIGHTS_KEY_WORDS = Arrays.asList("CHAMPION", "TRESOR", "Combats", "Campain", "SAISON");
     private static final List<String> RANK_ADVISE_KEY_WORDS = Arrays.asList("Signature", "Furniture", "Engraving", "Artifact");
+
+    @Value("${afk.data.excel.path}")
+    private String excelPath;
+
+    @Value("${afk.data.trigger-reload}")
+    private Boolean triggerReload;
 
     @Autowired private DBService dbService;
 
@@ -65,7 +71,7 @@ public class LoadData {
     public void loadData() throws Exception {
         LOGGER.info("Loading Data");
         this.loadMultipartFile();
-        if (true || isNewVersion()) {
+        if (triggerReload) {
             LOGGER.info("is new version");
             this.emptyData();
             this.loadFactions();
@@ -73,15 +79,17 @@ public class LoadData {
             this.loadRanks();
             this.loadTeamsAndFights();
 
-            LOGGER.info(this.charsCount + " characters added");
-            LOGGER.info(this.teamsCount + " teams added");
-            LOGGER.info(this.fightCount + " fights added");
+            LOGGER.info("{} characters added", this.charsCount);
+            LOGGER.info("{} teams added", this.teamsCount);
+            LOGGER.info("{} fights added", this.fightCount);
+            LOGGER.info("All the data is loaded");
+        } else {
+            LOGGER.info("Loading data ignored");
         }
-        LOGGER.info("All the data is loaded");
     }
 
     private void loadMultipartFile() throws IOException {
-        Path path = Paths.get("src/main/resources/excelFile/AFKArena.xlsx");
+        Path path = Paths.get(excelPath);
         String name = "data.xlsx";
         String originalFileName = "data.xlsx";
         String contentType = "text/plain";
@@ -106,7 +114,7 @@ public class LoadData {
             this.dbService.replaceVersion(currentVersion, new VersionEntity(version));
             return true;
         }
-        return FORCE_UPDATE;
+        return false;
     }
 
     private void emptyData() {
@@ -295,7 +303,7 @@ public class LoadData {
     }
 
     private void loadTeamsAndFightBySheet(List<TeamEntity> teams, String sheetName, int ally, int enemy) {
-        LOGGER.info("Load " + sheetName + " teams");
+        LOGGER.info("Load {} teams", sheetName);
         Sheet sheet = this.excelWB.getSheet(sheetName);
         for (int r = 1; r < sheet.getLastRowNum(); r+=5) {
             TeamEntity t1 = new TeamEntity();
@@ -343,7 +351,7 @@ public class LoadData {
             teamEntity.addCharacter(character);
         } else {
             if (!characterName.isEmpty()) {
-                LOGGER.info(characterName + " n'existe pas");
+                LOGGER.info("{} n'existe pas", characterName);
             }
         }
     }

@@ -38,17 +38,17 @@ public class TeamController {
 
     @GetMapping(value="/add-character")
     public ResponseEntity <Integer> addCharacter(@RequestParam String name) {
-        LOGGER.info("Add " + name + " to team");
+        LOGGER.info("Add {} to team", name);
         Optional<CharacterEntity> character = dbService.findCharacter(name);
         if (character.isEmpty()) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         Integer response = sharedData.addCharacter(character.get());
-        LOGGER.info("Added to the position: " + response);
+        LOGGER.info("Added to the position: {}", response);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @PostMapping(value="/remove-character")
     public ResponseEntity <?> removeCharacter(@RequestBody String name) throws CharacterNotFoundException {
-        LOGGER.info("Remove " + name + " to team");
+        LOGGER.info("Remove {} to team", name);
         sharedData.removeCharacter(name);
         return new ResponseEntity<>(HttpStatus.OK);
     }

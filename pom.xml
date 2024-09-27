@@ -9,9 +9,9 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>fr.perso.afk</groupId>
-	<artifactId>finder</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
-	<name>finder</name>
+	<artifactId>api</artifactId>
+	<version>1.0.0-SNAPSHOT</version>
+	<name>API</name>
 	<description>This project will help you on AFK Arena fights</description>
 	<properties>
 		<java.version>11</java.version>
@@ -72,6 +72,7 @@
 	</dependencies>
 
 	<build>
+		<finalName>${profileName}-${project.artifactId}-editor-${project.version}</finalName>
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
@@ -79,11 +80,26 @@
 			</plugin>
 		</plugins>
 	</build>
-	<repositories>
-		<repository>
-			<id>nexus_jcenter</id>
-			<name>nexus_jcenter</name>
-			<url>http://nexus.depot-eni.fr:8081/repository/jcenter</url>
-		</repository>
-	</repositories>
+	<profiles>
+		<!-- Dev profile active by default -->
+		<profile>
+			<id>dev</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+			<properties>
+				<ngProfile></ngProfile>
+				<profileName>dev</profileName>
+			</properties>
+		</profile>
+
+		<!-- Prod profile to use to deploy -->
+		<profile>
+			<id>prod</id>
+			<properties>
+				<ngProfile>production</ngProfile>
+				<profileName>prod</profileName>
+			</properties>
+		</profile>
+	</profiles>
 </project>

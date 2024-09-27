@@ -55,7 +55,7 @@ public class CharacterController {
 
     @GetMapping(value="/character")
     public ResponseEntity <CharacterSelectedResponse> getCharacter(@RequestParam String name) {
-        LOGGER.info("Get " + name + " details");
+        LOGGER.info("Get {} details", name);
         Optional<CharacterEntity> character = dbService.findCharacter(name); // 0s
         if (character.isEmpty()) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         name = character.get().getName();
