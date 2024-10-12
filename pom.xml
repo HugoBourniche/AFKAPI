@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>fr.perso.afk</groupId>
 	<artifactId>api</artifactId>
-	<version>1.0.0-SNAPSHOT</version>
+	<version>1.0.0</version>
 	<name>API</name>
 	<description>This project will help you on AFK Arena fights</description>
 	<properties>
